@@ -2,20 +2,22 @@ import gestion_productos
 
 
 inventory = {
-    1 : {   
-    "nombre" : "pan",
-    "stock" : 50,
-    "categorias" : ["panaderia", "alimento"],
-    "precio" : 1.0,
-    "estado" : True
-    },
-    2 : {   
-    "nombre" : "pan",
-    "stock" : 50,
-    "categorias" : ["panaderia", "alimento"],
-    "precio" : 1.0,
-    "estado" : True
-    }
+    1 : {
+        "name" : "Pan Con Queso", 
+        "price" : 100, 
+        "stock" : 12.0, 
+        "category" : ["Food & Grocery", "Bakery"], 
+        "status" : True
+        },
+
+    2 : {
+        "name" : "Pan Con Jamon", 
+        "price" : 100, 
+        "stock" : 10.0, 
+        "category" : ["Food & Grocery", "Bakery"], 
+        "status" : True
+        }
+    
 }
 
 available_categories = [
@@ -78,10 +80,10 @@ while ws:
     option = "1"
 
     if option == "1":
-        gestion_productos.add_product(inventory, available_categories, title)
-
+        gestion_productos.delete_product(inventory, title)
 
     print(inventory)
+
     break
 
 
