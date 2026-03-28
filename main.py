@@ -1,25 +1,11 @@
 import gestion_productos
+import operaciones_inventario
+import os
 
 
-inventory = {
-    1 : {
-        "name" : "Pan Con Queso", 
-        "price" : 100, 
-        "stock" : 12.0, 
-        "category" : ["Food & Grocery", "Bakery"], 
-        "status" : True
-        },
+inventory = gestion_productos.cargar_csv("inventario.csv")
 
-    2 : {
-        "name" : "Pan Con Jamon", 
-        "price" : 100, 
-        "stock" : 10.0, 
-        "category" : ["Food & Grocery", "Bakery"], 
-        "status" : True
-        }
-    
-}
-
+# List of available categories for products
 available_categories = [
     "Food & Grocery",
     "Bakery",
@@ -47,49 +33,67 @@ available_categories = [
     "Sports & Fitness"
 ]
 
+# Function to display a formatted title
 def title(title_text):
 
-    # Centers the title with dashes on the sides
+    # Check if the title length is even
     if len(title_text) % 2 == 0:
-        dash_count = (58 - len(title_text)) // 2
-        print("\033[34m" + "-"*dash_count + " " + title_text + " " + "-"*dash_count + "\033[0m")
+        dash_count = (98 - len(title_text)) // 2
+        print("\033[1;34m" + "-" * dash_count + " " + title_text + " " + "-" * dash_count + "\033[0m")
     else:
-        dash_count = ((58 - 1) - len(title_text) + 1) // 2
-        print("\n\033[34m" + "-"*dash_count + " " + title_text + " -" + "-"*dash_count + "\033[0m")
+        # Adjust formatting if the title length is odd
+        dash_count = ((98 - 1) - len(title_text) + 1) // 2
+        print("\n\033[1;34m" + "-" * dash_count + " " + title_text + " -" + "-" * dash_count + "\033[0m")
 
-def menu():
 
-    title("Menu De Opciones Del Sistema")
+# Control variable for the main loop
+is_running = True
+# Main program loop
+while is_running:
 
+    title("Menu De Opciones - Gestion De Invenario")
+
+    # Display menu options
     print("""
-1. Agregar Producto
-2. Mostrar Inventario
-3. realizar pedido
-4. Editar Produto
-5. Eliminar Producto
-6. Buscar Producto
-7. Ordenar Inventario
-8. Alertas De Stock
+\033[1;34m 1. \033[0mAgregar Producto
+\033[1;34m 2. \033[0mMostrar Inventario
+\033[1;34m 3. \033[0mEditar Produto
+\033[1;34m 4. \033[0mEliminar Producto
+\033[1;34m 5. \033[0mBuscar Producto
+\033[1;34m 6. \033[0mAlertas De Stock
+\033[1;34m 7. \033[0mCalcular Estadisticas(Inventario)
+
+\033[1;31m 8. \033[0mExit
     """)
 
+    # Print separator line
+    print("\033[1;34m" + "-" * 100 + "\033[0m")
 
-ws = True
-cont_product = 0
-while ws:
+    # Get user input
+    option = input("\n\033[34m >> \033[0mPlease select a option: ")
 
-    option = "1"
+    print("\n\033[1;34m" + "-" * 100 + "\033[0m")
 
+    # Clear console depending on OS (Windows/Linux/Mac)
+    os.system("cls" if os.name == "nt" else "clear")
+
+    # Menu options handling
     if option == "1":
+        gestion_productos.add_product(inventory, available_categories, title)
+    elif option == "2":
+        operaciones_inventario.show_inventory(inventory, title)
+    elif option == "3":
+        gestion_productos.edit_product(inventory, available_categories, title)
+    elif option == "4":
         gestion_productos.delete_product(inventory, title)
-
-    print(inventory)
-
-    break
-
-
-
-
-
-
-
-
+    elif option == "5":
+        operaciones_inventario.search_product(inventory, title)
+    elif option == "6":
+        operaciones_inventario.stock_alerts(inventory, title)
+    elif option == "7":
+        operaciones_inventario.calculate_statistics(inventory, title)
+    elif option == "8":
+        is_running = False
+    else:
+        # Error message for invalid option
+        print("\n\033[1;31m" + "-" * 100 + f"\n{'INVALID OPTION!':^100}\n" + "-" * 100 + "\033[0m")

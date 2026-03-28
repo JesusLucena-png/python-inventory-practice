@@ -1,0 +1,7 @@
+id,name,price,stock,category,status
+1,Pan Integral,8.5,50,Food & Grocery|Bakery,True
+2,Pan con jamon,12.0,0,Food & Grocery|Bakery,False
+3,Pan Francés,3.0,120,Food & Grocery|Bakery,True
+4,Leche Entera 1L,6.5,80,Food & Grocery|Dairy Products,True
+5,Carne de Res 1kg,28.0,25,Food & Grocery|Meat & Poultry,True
+6,Queso,10.0,100,Food & Grocery|Meat & Poultry,True

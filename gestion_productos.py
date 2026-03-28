@@ -1,21 +1,120 @@
+import csv
+import os
+
+def cargar_csv(file_path="inventario.csv"): 
+    # EN: Loads inventory data from a CSV file and converts it into a dictionary
+    inventory = {}
+
+    try:
+        # EN: Open the CSV file in read mode
+        with open(file_path, mode='r', newline='', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+
+            # EN: Iterate through each row in the CSV
+            for row in reader:
+                product_id = int(row["id"])  # EN: Convert ID to integer
+
+                # EN: Store each product in the inventory dictionary
+                inventory[product_id] = {
+                    "name": row["name"],
+                    "price": float(row["price"]),  # EN: Convert price to float
+                    "stock": int(row["stock"]),    # EN: Convert stock to integer
+                    "category": row["category"].split("|"),  # EN: Convert string to list
+                    "status": row["status"] == "True"  # EN: Convert string to boolean
+                }
+
+    except FileNotFoundError:
+        # EN: If file does not exist, notify user
+        print("\n\033[1;33mCSV file not found. A new one will be created.\033[0m")
+
+    except Exception as e:
+        # EN: Catch any unexpected error
+        print(f"\n\033[1;31mError loading CSV: {e}\033[0m")
+
+    return inventory
+
+
+def guardar_producto_csv(product_data, file_path="inventario.csv"):
+    """
+    EN: Saves a single product to the CSV file without deleting existing data.
+    """
+
+    # EN: Check if the file already exists
+    file_exists = os.path.isfile(file_path)
+
+    try:
+        # EN: Open file in append mode
+        with open(file_path, mode='a', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+
+            # EN: Write header only if file does not exist
+            if not file_exists:
+                writer.writerow(["id", "nombre", "precio", "stock", "categoria"])
+
+            # EN: Convert category list to string
+            categorias = ", ".join(product_data["category"])
+
+            # EN: Write product data row
+            writer.writerow([
+                product_data["id"],
+                product_data["name"],
+                product_data["price"],
+                product_data["stock"],
+                categorias
+            ])
+
+    except Exception as e:
+        # EN: Handle any writing error
+        print(f"\n\033[1;31mError saving CSV: {e}\033[0m")
+
+
+def actualizar_csv(inventory, file_path):
+    # EN: Rewrites the entire CSV file with the current inventory data
+
+    try:
+        # EN: Open file in write mode (overwrite)
+        with open(file_path, mode='w', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+
+            # EN: Write header
+            writer.writerow(["id", "name", "price", "stock", "category", "status"])
+
+            # EN: Iterate through inventory and write each product
+            for product_id, data in inventory.items():
+
+                writer.writerow([
+                    product_id,
+                    data["name"],
+                    data["price"],
+                    data["stock"],
+                    "|".join(data["category"]),  # EN: Convert list to string
+                    data["status"]
+                ])
+
+        print(f"\n\033[1;32mCSV successfully updated.\033[0m")
+
+    except Exception as e:
+        # EN: Handle any writing error
+        print(f"\n\033[1;31mError updating CSV: {e}\033[0m")
+
 def error_empty_field(user_input):
 
     if str(user_input).strip() == "":
-        return ("\n\033[1;31m" + "-"*60 + f"\nError: This field cannot be empty." + "\n" + "-"*60 + "\033[0m")
+        return ("\n\033[1;31m" + "-"*100 + f"\nError: This field cannot be empty." + "\n" + "-"*100 + "\033[0m")
     
     return None
 
-def error_negative_value(user_input):
+def error_negative_value(user_input,num):
 
-    if user_input <= 0:
-        return ("\n\033[1;31m" + "-"*60 + f"\nError: Negative numbers or zero are not allowed." + "\n" + "-"*60 + "\033[0m")
+    if user_input < num:
+        return ("\n\033[1;31m" + "-"*100 + f"\nError: Negative numbers or zero are not allowed." + "\n" + "-"*100 + "\033[0m")
     
     return None
 
 def error_category_out_of_range(user_input, inventory_list):
 
-    if user_input < 1 and user_input > len(inventory_list):
-        return ("\n\033[1;31m" + "-"*60 + f"\nError: The option must be between 1 and {len(inventory_list)}." + "\n" + "-"*60 + "\033[0m")
+    if user_input < 1 or user_input > len(inventory_list):
+        return ("\n\033[1;31m" + "-"*100 + f"\nError: The option must be between 1 and {len(inventory_list)}." + "\n" + "-"*100 + "\033[0m")
     
     return None
 
@@ -27,28 +126,13 @@ def display_inventory_list(inventory_list):
 def error_duplicate_data(user_input, available_categories, list_product_category):
 
     if available_categories[user_input-1] in list_product_category:
-        return("\n\033[1;31m" + "-"*60 + f"\nError: This data is already duplicated." + "\n" + "-"*60 + "\033[0m")
+        return("\n\033[1;31m" + "-"*100 + f"\nError: This data is already duplicated." + "\n" + "-"*100 + "\033[0m")
     
     return None
 
 def confirm_exit(message="Press (n) to finish and any key to continue: "):
-    """
-    Function: confirm_exit
 
-    Parameters:
-
-    - message:
-    Text message displayed to the user to decide whether to continue
-    or exit a loop. By default, it prompts the user to press (n) to finish
-    or any other key to continue.
-
-    Description:
-    This function displays a confirmation message that allows the user
-    to either continue or terminate a loop (e.g., a while loop) based
-    on their input.
-    """
-
-    user_option = input(f"\n\033[31m >> \033[0m{message}").strip().lower()
+    user_option = input(f"\n\033[1;31m >> \033[0m{message}").strip().lower()
         
     if user_option == "n":
         return True     
@@ -56,28 +140,30 @@ def confirm_exit(message="Press (n) to finish and any key to continue: "):
 def menu():
 
     print("""
-1. Edit Name
-2. Edit Price
-3. Edit Category
-4. Edit Stock
+\033[1;34m 1. \033[0mEdit Name
+\033[1;34m 2. \033[0mEdit Price
+\033[1;34m 3. \033[0mEdit Category
+\033[1;34m 4. \033[0mEdit Stock
           
-5. Exit
-    """)
-
-
+\033[1;31m 5. \033[0mExit""")
 
 def add_product(inventory, available_categories, title):
 
+    # Dictionary to store created products history
     product_history = {}
 
-    act_add_product = True
-    while act_add_product:
+    # Control variable for main loop
+    is_adding_product = True
+    while is_adding_product:
+
+        # Show dynamic title with product number and ID
         title(f"Add Product N°{len(product_history)+1} - ID {len(inventory)+1}")
 
+        # ===== PRODUCT NAME =====
         while True:
-
             product_name = input("\n\033[34m >> \033[0mPlease enter the product name: ").capitalize()
 
+            # Validate empty input
             error = error_empty_field(product_name)
             if error:
                 print(error)
@@ -85,391 +171,409 @@ def add_product(inventory, available_categories, title):
 
             break
 
-        while True:
+        print("\n" + "\033[1;34m-\033[0m" * 100)
 
+        # ===== PRODUCT PRICE =====
+        while True:
             try:
                 product_price = float(input("\n\033[34m >> \033[0mPlease enter the product price: "))
-                
             except ValueError:
-                print("\n\033[1;31m" + "-"*60 + f"\nError: Please enter numbers only in this field." + "\n" + "-"*60 + "\033[0m")
+                # Handle non-numeric input
+                print("\n\033[1;31m" + "-" * 100 + f"\nError: Please enter numbers only in this field." + "\n" + "-" * 100 + "\033[0m")
                 continue
 
+            # Validate empty input
             error = error_empty_field(product_price)
             if error:
                 print(error)
                 continue 
 
-            error = error_negative_value(product_price)
+            # Validate minimum value
+            error = error_negative_value(product_price, 0.01)
             if error:
                 print(error)
                 continue 
 
             break
-            
-        while True:
 
+        print("\n" + "\033[1;34m-\033[0m" * 100)
+            
+        # ===== PRODUCT STOCK =====
+        while True:
             try:
                 product_stock = int(input("\n\033[34m >> \033[0mPlease enter the product stock quantity: "))
-                
             except ValueError:
-                print("\n\033[1;31m" + "-"*60 + f"\nError: Please enter numbers only in this field." + "\n" + "-"*60 + "\033[0m")
+                # Handle non-numeric input
+                print("\n\033[1;31m" + "-" * 100 + f"\nError: Please enter numbers only in this field." + "\n" + "-" * 100 + "\033[0m")
                 continue
 
+            # Validate empty input
             error = error_empty_field(product_stock)
             if error:
                 print(error)
                 continue
 
-            error = error_negative_value(product_stock)
+            # Validate minimum value
+            error = error_negative_value(product_stock, 0)
             if error:
                 print(error)
                 continue 
 
             break   
 
-
-        list_product_category = []
+        # ===== PRODUCT CATEGORY =====
+        selected_categories = []
 
         title("List Category")
 
+        # Display available categories
         display_inventory_list(available_categories)
-        print("\033[34m-"*60)
 
-        print("\n\033[31mEnter '0' to finish.\033[0m")
+        print("\n" + "\033[1;34m-\033[0m" * 100)
+
+        print("\033[1;31m" + "-" * 100 + f"\n{'Enter [ 0 ] to finish.':^100}" + "\n" + "-" * 100 + "\033[0m")
             
         while True:
-
             try:
-                product_category = int(input(f"\n\033[34m >> \033[0mPlease select a category option for the product N°{len(list_product_category)+1}: "))
+                category_option = int(input(f"\n\033[34m >> \033[0mPlease select a category option for the product N°{len(selected_categories)+1}: "))
             except ValueError:
-                print("\n\033[1;31m" + "-"*60 + f"\nError: Please enter numbers only in this field." + "\n" + "-"*60 + "\033[0m")
+                # Handle non-numeric input
+                print("\n\033[1;31m" + "-" * 100 + f"\nError: Please enter numbers only in this field." + "\n" + "-" * 100 + "\033[0m")
                 continue
 
-            error = error_empty_field(product_category)
+            # Validate empty input
+            error = error_empty_field(category_option)
             if error:
                 print(error)
                 continue 
 
-            if product_category == 0:
-                if list_product_category:
-                    print(f"\n{len(list_product_category)} categories added successfully.")
-                    print(", ".join(list_product_category))
-                    break
+            print("\n" + "\033[1;34m-\033[0m" * 100)
 
+            # Finish category selection
+            if category_option == 0:
+                if selected_categories:
+                    print(f"\n\033[34m >> \033[0m{len(selected_categories)} categories added successfully.")
+                    print(" - ".join(selected_categories))
+                    break
                 else:
-                    print("\n\033[1;31m" + "-"*60 + f"\nError: You must select a category to classify the product." + "\n" + "-"*60 + "\033[0m")
+                    print("\n\033[1;31m" + "-" * 100 + f"\nError: You must select a category to classify the product." + "\n" + "-" * 100 + "\033[0m")
                     continue
 
-            error = error_category_out_of_range(product_category, available_categories)
+            # Validate range
+            error = error_category_out_of_range(category_option, available_categories)
             if error:
                 print(error)
                 continue 
 
-            error = error_duplicate_data(product_category, available_categories, list_product_category)
+            # Validate duplicates
+            error = error_duplicate_data(category_option, available_categories, selected_categories)
             if error:
                 print(error)
                 continue 
 
-            list_product_category.append(available_categories[product_category-1]) 
+            # Add selected category
+            selected_categories.append(available_categories[category_option - 1]) 
 
-        add_product_inventory(product_name,product_price,product_stock,list_product_category, inventory, product_history)
+        # Add product to inventory and history
+        add_product_inventory(product_name, product_price, product_stock, selected_categories, inventory, product_history)
 
-        # Ask user if they want to continue
-        exit = confirm_exit()
-        if exit == True:
-            act_add_product = False
+        print("\n" + "\033[1;34m-\033[0m" * 100)
+
+        # Ask user if they want to continue adding products
+        exit_flag = confirm_exit()
+        if exit_flag == True:
+            is_adding_product = False
         else:
             continue
 
         # ===== PRODUCTS CREATION HISTORY =====
 
-        # Print header
-        print("\n\033[34m" + "-"*85)
+        print("\n" + "\033[1;34m" + "-" * 100)
         print("PRODUCTS CREATION HISTORY")
-        print("\033[34m" + "-"*85)
-        print(f"{'ID':<5} {'NAME':<20} {'CATEGIRIE':<40} {'STOCK':<10} {'PRICE':<10}")
-        print("-"*85 + "\033[0m")
+        print("-" * 100)
+        print(f"{'ID':^5}| {'NAME':<20}| {'CATEGORY':<50}|{'STOCK':^10}|{'PRICE':^10}")
+        print("-" * 100 + "\033[0m")
 
-        # Iterate and display created products
-        for cc, data in product_history.items():
-            categorias = ", ".join(data['category'])
+        # Display created products
+        for product_id, product_data in product_history.items():
+            categories = ", ".join(product_data['category'])
             print(
-                f"\033[1;32m{cc:<5} {data['name']:<20} {categorias:<40} {data['stock']:<10} {data["price"]:<10}\033[0m"
-                )
-            print("\033[34m" + "-"*85 + "\033[0m")
+                f"\033[1;0m{product_id:^5}| {product_data['name']:<20}| {categories:<50}|{product_data['stock']:^10}|{product_data['price']:^10}\033[0m"
+            )
+            print("\033[1;34m" + "-" * 100 + "\033[0m")
 
-                # Final separator
-    print("\033[34m" + "-"*85 + "\033[0m\n")
+
 
 def add_product_inventory(product_name, product_price, product_stock, product_category, inventory, history):
 
-    auto_id = len(inventory) + 1
+    # Generate automatic ID based on inventory size
+    product_id = len(inventory) + 1
 
-    inventory[auto_id] = {
-        "name" : product_name,
-        "price" : product_stock,
-        "stock" : product_price,
-        "category" : product_category,
-        "status" : True
+    # Add product to main inventory
+    product_data = {
+        "id": product_id,
+        "name": product_name,
+        "price": product_price,
+        "stock": product_stock,
+        "category": product_category,
+        "status": True
     }
 
-    history[auto_id] = {
-        "name" : product_name,
-        "price" : product_stock,
-        "stock" : product_price,
-        "category" : product_category,
-        "status" : True
-    }
+    # Save product in creation history
+    history[product_id] = product_data
+    inventory[product_id] = product_data
+
+    guardar_producto_csv(product_data)
 
 
 def edit_product(inventory, available_categories, title):
     # EN: Edits an existing product in the inventory
-    # ES: Edita un producto existente en el inventario
 
-    act_edt_product = True
-    while act_edt_product:
+    is_editing_product = True
+    while is_editing_product:
 
+        # Check if inventory is empty
         if not inventory:
-            print("\n\033[1;31m" + "-"*60 + f"\nError: Please Enter A Product Into The System, There Are No Products Created" + "\n" + "-"*60 + "\033[0m")
-            act_edt_product = False
+            print("\n\033[1;31m" + "-" * 100 + f"\nError: Please Enter A Product Into The System, There Are No Products Created" + "\n" + "-" * 100 + "\033[0m")
+            is_editing_product = False
         
         else:
+            title("Edit Product")
 
-            title(f"Edit Product")
-
+            # ===== INPUT PRODUCT ID =====
             try:
                 product_id = int(input("\n\033[34m >> \033[0mPlease enter the product ID: "))
-
             except ValueError:
-                print("\n\033[1;31m" + "-"*60 + f"\nError: Please enter numbers only in this field." + "\n" + "-"*60 + "\033[0m")
+                print("\n\033[1;31m" + "-" * 100 + f"\nError: Please enter numbers only in this field." + "\n" + "-" * 100 + "\033[0m")
                 continue
 
+            # Validate empty input
             error = error_empty_field(product_id)
             if error:
                 print(error)
                 continue
 
-            if not product_id in inventory:
-
-                print("\n\033[1;31m" + "-"*60 + f"\nError: Please enter a valid id, that id was not found." + "\n" + "-"*60 + "\033[0m")
+            # Validate product existence
+            if product_id not in inventory:
+                print("\n\033[1;31m" + "-" * 100 + f"\nError: Please enter a valid id, that id was not found." + "\n" + "-" * 100 + "\033[0m")
                 continue
+
+            print("\n" + "\033[1;34m-\033[0m" * 100)
                 
-            while act_edt_product:
+            while is_editing_product:
 
-                print("\n\033[34m" + "-"*85)
-                print("PRODUCTS EDIT")
-                print("\033[34m" + "-"*85)
-                print(f"{'ID':<5} {'NAME':<20} {'CATEGIRIE':<40} {'STOCK':<10} {'PRICE':<10}")
-                print("-"*85 + "\033[0m")
+                # ===== DISPLAY SELECTED PRODUCT =====
+                print("\n" + "\033[1;34m" + "-" * 100)
+                print("PRODUCT")
+                print("-" * 100)
+                print(f"{'ID':^5}| {'NAME':<20}| {'CATEGIRIE':<50}|{'STOCK':^10}|{'PRICE':^10}")
+                print("-" * 100 + "\033[0m")
 
-                # Iterate and display created products
-                for cc, data in inventory.items():
+                for current_id, product_data in inventory.items():
 
-                    if product_id == cc:
+                    if product_id == current_id:
 
-                        categorias = ", ".join(data['category'])
-                        print(f"\033[1;32m{cc:<5} {data['name']:<20} {categorias:<40} {data['stock']:<10} {data["price"]:<10}\033[0m")
-                        print("-"*85 + "\033[0m")
+                        categories = ", ".join(product_data['category'])
+
+                        print(f"\033[1;0m{current_id:^5}| {product_data['name']:<20}| {categories:<50}|{product_data['stock']:^10}|{product_data['price']:^10}\033[0m")
+                        print("\033[1;34m" + "-" * 100 + "\033[0m")
                 
-                        title(f"Product Edition ID {cc} - {data['name']}")
+                        title(f"Product Edition ID {current_id} - {product_data['name']}")
 
+                        # Show edit menu
                         menu()
+                        print("\n" + "\033[1;34m-\033[0m" * 100)
 
-                        option = input("\033[34m >> \033[0mEnter an Option: ")
+                        option = input("\n\033[34m >> \033[0mPlease select a option: ")
 
-                        # Print a separator line
-                        print("\n\033[34m" + "-"*60 + "\033[0m")
+                        print("\n" + "\033[1;34m-\033[0m" * 100)
 
-                        # Option 1: Call customer registration function
+                        # ===== OPTION 1: EDIT NAME =====
                         if option == "1":
-
                             while True:
+                                new_name = input("\n\033[34m >> \033[0mPlease enter the product name: ").capitalize()
 
-                                product_name = input("\n\033[34m >> \033[0mPlease enter the product name: ").capitalize()
-
-                                error = error_empty_field(product_name)
+                                error = error_empty_field(new_name)
                                 if error:
                                     print(error)
                                     continue 
 
-                                data['name'] = product_name
-
+                                product_data['name'] = new_name
+                                actualizar_csv(inventory, "inventario.csv")
                                 break
 
-                        # Option 2: Call product registration function
+                        # ===== OPTION 2: EDIT PRICE =====
                         elif option == "2":
-                                    
                             while True:
-
                                 try:
-                                    product_price = float(input("\n\033[34m >> \033[0mPlease enter the product price: "))
-                                        
+                                    new_price = float(input("\n\033[34m >> \033[0mPlease enter the product price: "))
                                 except ValueError:
-                                    print("\n\033[1;31m" + "-"*60 + f"\nError: Please enter numbers only in this field." + "\n" + "-"*60 + "\033[0m")
+                                    print("\n\033[1;31m" + "-" * 100 + f"\nError: Please enter numbers only in this field." + "\n" + "-" * 100 + "\033[0m")
                                     continue
 
-                                error = error_empty_field(product_price)
+                                error = error_empty_field(new_price)
                                 if error:
                                     print(error)
                                     continue 
 
-                                error = error_negative_value(product_price)
+                                error = error_negative_value(new_price, 0.01)
                                 if error:
                                     print(error)
                                     continue
 
-                                data['price'] = product_price
-
+                                product_data['price'] = new_price
+                                actualizar_csv(inventory, "inventario.csv")
                                 break
                                 
-                        # Option 3: Call order creation function
+                        # ===== OPTION 3: EDIT CATEGORY =====
                         elif option == "3":
 
-                            list_product_category = []
+                            selected_categories = []
 
                             title("List Category")
-
                             display_inventory_list(available_categories)
-                            print("\033[34m-"*60)
 
-                            print("\n\033[31mEnter '0' to finish.\033[0m")
+                            print("\n" + "\033[1;34m-\033[0m" * 100)
+                            print("\033[1;31m" + "-" * 100 + f"\n{'Enter [ 0 ] to finish.':^100}" + "\n" + "-" * 100 + "\033[0m")
                                     
                             while True:
-
                                 try:
-                                    product_category = int(input(f"\n\033[34m >> \033[0mPlease select a category option for the product N°{len(list_product_category)+1}: "))
+                                    category_option = int(input(f"\n\033[34m >> \033[0mPlease select a category option for the product N°{len(selected_categories)+1}: "))
                                 except ValueError:
-                                    print("\n\033[1;31m" + "-"*60 + f"\nError: Please enter numbers only in this field." + "\n" + "-"*60 + "\033[0m")
+                                    print("\n\033[1;31m" + "-" * 100 + f"\nError: Please enter numbers only in this field." + "\n" + "-" * 100 + "\033[0m")
                                     continue
 
-                                error = error_empty_field(product_category)
+                                error = error_empty_field(category_option)
                                 if error:
                                     print(error)
                                     continue 
 
-                                if product_category == 0:
-                                    if list_product_category:
-                                        print(f"\n{len(list_product_category)} categories added successfully.")
-                                        print(", ".join(list_product_category))
+                                if category_option == 0:
+                                    if selected_categories:
+                                        print(f"\n{len(selected_categories)} categories added successfully.")
+                                        print(", ".join(selected_categories))
                                         break
-
                                     else:
-                                        print("\n\033[1;31m" + "-"*60 + f"\nError: You must select a category to classify the product." + "\n" + "-"*60 + "\033[0m")
+                                        print("\n\033[1;31m" + "-" * 100 + f"\nError: You must select a category to classify the product." + "\n" + "-" * 100 + "\033[0m")
                                         continue
 
-                                error = error_category_out_of_range(product_category, available_categories)
+                                error = error_category_out_of_range(category_option, available_categories)
                                 if error:
                                     print(error)
                                     continue 
 
-                                error = error_duplicate_data(product_category, available_categories, list_product_category)
+                                error = error_duplicate_data(category_option, available_categories, selected_categories)
                                 if error:
                                     print(error)
                                     continue 
 
-                                list_product_category.append(available_categories[product_category-1]) 
+                                selected_categories.append(available_categories[category_option - 1]) 
 
-                                # Ask user if they want to continue
-                                exit = confirm_exit()
-                                if exit == True:
-                                    data['category'] = list_product_category
+                                # Ask if user wants to continue selecting categories
+                                exit_flag = confirm_exit()
+                                if exit_flag:
+                                    product_data['category'] = selected_categories
+                                    actualizar_csv(inventory, "inventario.csv")
                                     break
                                 else:
                                     continue
 
-                        # Option 4: Display registered orders
+                        # ===== OPTION 4: EDIT STOCK =====
                         elif option == "4":
-
                             while True:
-
                                 try:
-                                    product_stock = int(input("\n\033[34m >> \033[0mPlease enter the product stock quantity: "))
-                                        
+                                    new_stock = int(input("\n\033[34m >> \033[0mPlease enter the product stock quantity: "))
                                 except ValueError:
-                                    print("\n\033[1;31m" + "-"*60 + f"\nError: Please enter numbers only in this field." + "\n" + "-"*60 + "\033[0m")
+                                    print("\n\033[1;31m" + "-" * 100 + f"\nError: Please enter numbers only in this field." + "\n" + "-" * 100 + "\033[0m")
                                     continue
 
-                                error = error_empty_field(product_stock)
+                                error = error_empty_field(new_stock)
                                 if error:
                                     print(error)
                                     continue
 
-                                error = error_negative_value(product_stock)
+                                error = error_negative_value(new_stock, 0)
                                 if error:
                                     print(error)
                                     continue 
 
-                                data['stock'] = product_stock
-
+                                product_data['stock'] = new_stock
+                                actualizar_csv(inventory, "inventario.csv")
                                 break   
-                                
-                        # Option 5: Calculate daily income
-                        elif option == "5":
-                            act_edt_product = False
 
-                        # Handle invalid input
+                        # ===== OPTION 5: EXIT =====
+                        elif option == "5":
+                            is_editing_product = False
+
+                        # ===== INVALID OPTION =====
                         else:
-                            print("\n\033[1;31m" + "-"*60)
-                            print("Error: Invalid Value Entered. Enter an option between 1 and 7")
-                            print("-"*60 + "\033[0m")
+                            print("\n\033[1;31m" + "-" * 100)
+                            print("Error: Invalid Value Entered. Enter an option between 1 and 5")
+                            print("-" * 100 + "\033[0m")
+
+
+
 
 def delete_product(inventory, title):
-    # EN: Edits an existing product in the inventory
-    # ES: Edita un producto existente en el inventario
+    # EN: Deletes (logically) a product from the inventory by changing its status
 
-    act_edt_product = True
-    while act_edt_product:
+    is_deleting_product = True
+    while is_deleting_product:
 
+        # Check if inventory is empty
         if not inventory:
-            print("\n\033[1;31m" + "-"*60 + f"\nError: Please Enter A Product Into The System, There Are No Products Created" + "\n" + "-"*60 + "\033[0m")
-            act_edt_product = False
+            print("\n\033[1;31m" + "-" * 100 + f"\nError: Please Enter A Product Into The System, There Are No Products Created" + "\n" + "-" * 100 + "\033[0m")
+            is_deleting_product = False
         
         else:
+            # ===== INPUT PRODUCT ID =====
+            while True:
+                title("Delete Product")
 
-            title(f"Delete Product")
+                try:
+                    product_id = int(input("\n\033[34m >> \033[0mPlease enter the product ID: "))
+                except ValueError:
+                    # Handle non-numeric input
+                    print("\n\033[1;31m" + "-" * 100 + f"\nError: Please enter numbers only in this field." + "\n" + "-" * 100 + "\033[0m")
+                    continue
 
-            try:
-                product_id = int(input("\n\033[34m >> \033[0mPlease enter the product ID: "))
+                # Validate empty input
+                error = error_empty_field(product_id)
+                if error:
+                    print(error)
+                    continue
 
-            except ValueError:
-                print("\n\033[1;31m" + "-"*60 + f"\nError: Please enter numbers only in this field." + "\n" + "-"*60 + "\033[0m")
-                continue
+                # Validate product existence
+                if product_id not in inventory:
+                    print("\n\033[1;31m" + "-" * 100 + f"\nError: Please enter a valid id, that id was not found." + "\n" + "-" * 100 + "\033[0m")
+                    continue
 
-            error = error_empty_field(product_id)
-            if error:
-                print(error)
-                continue
+                break
 
-            if product_id in inventory:
+            # ===== DELETE (LOGICAL) PRODUCT =====
+            while is_deleting_product:
 
-                while act_edt_product:
+                # Display product header
+                print("\n" + "\033[1;34m" + "-" * 100)
+                print("PRODUCT")
+                print("-" * 100)
+                print(f"{'ID':^5}| {'NAME':<20}| {'CATEGORY':<40}|{'STOCK':^10}|{'PRICE':^10}|{'STATUS':^10}")
+                print("-" * 100 + "\033[0m")
 
-                    print("\n\033[34m" + "-"*85)
-                    print("PRODUCTS DELETE")
-                    print("\033[34m" + "-"*85)
-                    print(f"{'ID':<5} {'NAME':<20} {'CATEGIRIE':<40} {'STOCK':<10} {'PRICE':<10} {'STATUS':<10}")
-                    print("-"*85 + "\033[0m")
+                # Find and update the selected product
+                for current_id, product_data in inventory.items():
 
-                    # Iterate and display created products
-                    for cc, data in inventory.items():
+                    if product_id == current_id:
 
-                        if product_id == cc:
+                        # Logical deletion (change status to False)
+                        product_data["status"] = False
+                        actualizar_csv(inventory, "inventario.csv")
 
-                            data["status"] =  False
-                            categorias = ", ".join(data['category'])
+                        # Format categories for display
+                        categories = ", ".join(product_data['category'])
 
-                            print(f"\033[1;32m{cc:<5} {data['name']:<20} {categorias:<40} {data['stock']:<10} {data["price"]:<10} {str(data["status"]):<10}\033[0m")
-                            print("-"*85 + "\033[0m")
-                        
-                    act_edt_product = False
-
-            else:
-
-                print("\n\033[1;31m" + "-"*60 + f"\nError: Please enter a valid id, that id was not found." + "\n" + "-"*60 + "\033[0m")
-                act_edt_product = False
-
-
-def search_product(inventory):
-    # EN: Searches for a product in the inventory
-    # ES: Busca un producto en el inventario
-    pass
+                        # Display updated product
+                        print(f"\033[1;0m{current_id:^5}| {product_data['name']:<20}| {categories:<40}|{product_data['stock']:^10}|{product_data['price']:^10}|{str(product_data['status']):^10}\033[0m")
+                        print("\033[1;34m" + "-" * 100 + "\033[0m")
+                    
+                is_deleting_product = False
